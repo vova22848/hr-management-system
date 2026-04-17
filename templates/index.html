@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд - АРМ Кадры{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i>
+            Дашборд
+        </h2>
+        <small class="text-muted">
+            <i class="far fa-calendar-alt me-1"></i>
+            <span id="currentDate"></span>
+        </small>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-white-50">Сотрудников</h6>
+                            <h2 class="mb-0">{{ total_employees }}</h2>
+                        </div>
+                        <i class="fas fa-users stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-white-50">Подразделений</h6>
+                            <h2 class="mb-0">{{ total_departments }}</h2>
+                        </div>
+                        <i class="fas fa-building stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-white-50">Должностей</h6>
+                            <h2 class="mb-0">{{ total_positions }}</h2>
+                        </div>
+                        <i class="fas fa-briefcase stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-white-50">Активных приказов</h6>
+                            <h2 class="mb-0">19</h2>
+                        </div>
+                        <i class="fas fa-file-alt stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- График распределения по подразделениям -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Распределение по подразделениям
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="deptChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Предстоящие отпуска -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Предстоящие отпуска
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-scroll">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Сотрудник</th>
+                                    <th>Даты</th>
+                                    <th>Тип</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vacation in upcoming_vacations %}
+                                <tr>
+                                    <td>{{ vacation.employee_name }}</td>
+                                    <td>{{ vacation.start_date }} - {{ vacation.end_date }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ vacation.vacation_type }}</span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        <i class="fas fa-calendar-check fa-2x mb-2 d-block"></i>
+                                        Нет предстоящих отпусков
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние приказы -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Последние приказы
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Номер приказа</th>
+                                <th>Тип</th>
+                                <th>Сотрудник</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td><code>{{ order.order_number }}</code></td>
+                                <td>
+                                    {% if order.order_type == 'прием' %}
+                                        <span class="badge bg-success">{{ order.order_type }}</span>
+                                    {% elif order.order_type == 'увольнение' %}
+                                        <span class="badge bg-danger">{{ order.order_type }}</span>
+                                    {% elif order.order_type == 'перевод' %}
+                                        <span class="badge bg-info">{{ order.order_type }}</span>
+                                    {% elif order.order_type == 'премия' %}
+                                        <span class="badge bg-warning">{{ order.order_type }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ order.order_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ order.employee_name }}</td>
+                                <td>{{ order.order_date }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-file-alt fa-2x mb-2 d-block"></i>
+                                    Нет приказов
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Текущая дата
+    const now = new Date();
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    // Данные для графика
+    const deptData = {{ dept_stats | tojson }};
+    const labels = deptData.map(d => d.name);
+    const data = deptData.map(d => d.count);
+
+    // Создаем график
+    const ctx = document.getElementById('deptChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                    '#4facfe', '#00f2fe', '#43e97b', '#fa709a'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} чел. (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

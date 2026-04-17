@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Отпуска - АРМ Кадры{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-umbrella-beach me-2"></i>Отпуска</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVacationModal">
+        <i class="fas fa-plus me-2"></i>Оформить отпуск
+    </button>
+</div>
+
+<div class="table-container">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Сотрудник</th>
+                <th>Тип отпуска</th>
+                <th>Дата начала</th>
+                <th>Дата окончания</th>
+                <th>Длительность</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vac in vacations %}
+            <tr>
+                <td>{{ vac.employee_name }}</td>
+                <td>{{ vac.vacation_type }}</td>
+                <td>{{ vac.start_date }}</td>
+                <td>{{ vac.end_date }}</td>
+                <td>
+                    {% set days = (vac.end_date|string)[8:10]|int - (vac.start_date|string)[8:10]|int + 1 %}
+                    {{ days }} дн.
+                </td>
+                <td>
+                    {% if vac.approved %}
+                        <span class="badge bg-success">Утвержден</span>
+                    {% else %}
+                        <span class="badge bg-warning">На рассмотрении</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted">Нет записей об отпусках</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно оформления отпуска -->
+<div class="modal fade" id="addVacationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Оформить отпуск</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('add_vacation') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Сотрудник *</label>
+                        <select class="form-control" name="employee_id" required>
+                            <option value="">Выберите сотрудника</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Тип отпуска *</label>
+                        <select class="form-control" name="vacation_type" required>
+                            <option value="ежегодный">Ежегодный оплачиваемый</option>
+                            <option value="учебный">Учебный</option>
+                            <option value="без сохранения">Без сохранения зарплаты</option>
+                            <option value="декретный">Декретный</option>
+                            <option value="по уходу">По уходу за ребенком</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Дата начала *</label>
+                            <input type="date" class="form-control" name="start_date" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Дата окончания *</label>
+                            <input type="date" class="form-control" name="end_date" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Оформить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

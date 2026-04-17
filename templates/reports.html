@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Отчеты - АРМ Кадры{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chart-bar me-2"></i>Отчеты и аналитика</h2>
+
+<div class="row">
+    <!-- График распределения по подразделениям -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Распределение сотрудников по подразделениям</h5>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="deptChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- График по полу -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Гендерный состав</h5>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="genderChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Возрастные группы -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Возрастная структура</h5>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="ageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Общая статистика</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Всего сотрудников</th>
+                        <td><span class="badge bg-primary fs-6" id="totalEmployees">0</span></td>
+                    </tr>
+                    <tr>
+                        <th>Подразделений</th>
+                        <td><span class="badge bg-success fs-6" id="totalDepartments">0</span></td>
+                    </tr>
+                    <tr>
+                        <th>Должностей</th>
+                        <td><span class="badge bg-info fs-6" id="totalPositions">0</span></td>
+                    </tr>
+                    <tr>
+                        <th>Приказов</th>
+                        <td><span class="badge bg-warning fs-6" id="totalOrders">0</span></td>
+                    </tr>
+                    <tr>
+                        <th>Предстоящих отпусков (30 дн.)</th>
+                        <td><span class="badge bg-danger fs-6" id="upcomingVacations">0</span></td>
+                    </tr>
+                </table>
+
+                <hr>
+
+                <h6>Дополнительная информация</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check-circle text-success me-2"></i>Активных сотрудников: <span id="activeEmployees">0</span></li>
+                    <li><i class="fas fa-user-slash text-danger me-2"></i>Уволенных: <span id="firedEmployees">0</span></li>
+                    <li><i class="fas fa-venus-mars text-info me-2"></i>Средний возраст: <span id="avgAge">0</span> лет</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Данные для графиков
+    const deptData = {{ dept_distribution | tojson }};
+    const genderData = {{ gender_distribution | tojson }};
+    const ageData = {{ age_stats | tojson }};
+
+    // График по подразделениям
+    new Chart(document.getElementById('deptChart'), {
+        type: 'bar',
+        data: {
+            labels: deptData.map(d => d.name),
+            datasets: [{
+                label: 'Количество сотрудников',
+                data: deptData.map(d => d.count),
+                backgroundColor: '#667eea',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // График по полу
+    new Chart(document.getElementById('genderChart'), {
+        type: 'pie',
+        data: {
+            labels: genderData.map(d => d.gender === 'М' ? 'Мужчины' : 'Женщины'),
+            datasets: [{
+                data: genderData.map(d => d.count),
+                backgroundColor: ['#4facfe', '#fa709a']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // График по возрасту
+    new Chart(document.getElementById('ageChart'), {
+        type: 'bar',
+        data: {
+            labels: ageData.map(d => d.age_group),
+            datasets: [{
+                label: 'Количество сотрудников',
+                data: ageData.map(d => d.count),
+                backgroundColor: '#43e97b',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Загрузка статистики через API
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalEmployees').textContent = data.total_employees;
+            document.getElementById('totalDepartments').textContent = data.total_departments;
+            document.getElementById('totalPositions').textContent = data.total_positions;
+            document.getElementById('totalOrders').textContent = data.total_orders;
+            document.getElementById('upcomingVacations').textContent = data.upcoming_vacations;
+
+            // Дополнительная статистика
+            document.getElementById('activeEmployees').textContent = data.total_employees;
+
+            // Получаем количество уволенных
+            fetch('/api/stats/fired')
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('firedEmployees').textContent = d.fired_employees;
+                    document.getElementById('avgAge').textContent = d.avg_age || '—';
+                });
+        });
+});
+</script>
+{% endblock %}
